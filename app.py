@@ -36,9 +36,9 @@ st.image(
 
 st.title("CSV Wrangler")
 
-st.caption(
-    "PRD : TBC | Streamlit Ag-Grid from Pablo Fonseca: https://pypi.org/project/streamlit-aggrid/"
-)
+# st.caption(
+#     "PRD : TBC | Streamlit Ag-Grid from Pablo Fonseca: https://pypi.org/project/streamlit-aggrid/"
+# )
 
 
 # ModelType = st.radio(
@@ -47,19 +47,18 @@ st.caption(
 #     help="At present, you can choose between 2 models (Flair or DistilBERT) to embed your text. More to come!",
 # )
 
-
-with st.expander("ToDo's", expanded=False):
-    st.markdown(
-        """
--   Add pandas.json_normalize() - https://streamlit.slack.com/archives/D02CQ5Z5GHG/p1633102204005500
--   **Remove 200 MB limit and test with larger CSVs**. Currently, the content is embedded in base64 format, so we may end up with a large HTML file for the browser to render
--   **Add an encoding selector** (to cater for a wider array of encoding types)
--   **Expand accepted file types** (currently only .csv can be imported. Could expand to .xlsx, .txt & more)
--   Add the ability to convert to pivot → filter → export wrangled output (Pablo is due to change AgGrid to allow export of pivoted/grouped data)
-	    """
-    )
-
-    st.text("")
+# with st.expander("ToDo's", expanded=False):
+#     st.markdown(
+#         """
+# -   Add pandas.json_normalize() - https://streamlit.slack.com/archives/D02CQ5Z5GHG/p1633102204005500
+# -   **Remove 200 MB limit and test with larger CSVs**. Currently, the content is embedded in base64 format, so we may end up with a large HTML file for the browser to render
+# -   **Add an encoding selector** (to cater for a wider array of encoding types)
+# -   **Expand accepted file types** (currently only .csv can be imported. Could expand to .xlsx, .txt & more)
+# -   Add the ability to convert to pivot → filter → export wrangled output (Pablo is due to change AgGrid to allow export of pivoted/grouped data)
+# 	    """
+#     )
+# 
+#     st.text("")
 
 
 c29, c30, c31 = st.columns([1, 6, 1])
