@@ -5,8 +5,12 @@ import json
 import base64
 import uuid
 import re
-
+import math
+import jupytext
 import importlib.util
+from bokeh.models.widgets import Div
+from io import BytesIO
+from openpyxl import *
 
 
 def import_from_file(module_name: str, filepath: str):
@@ -63,7 +67,7 @@ def open_link(url, new_tab=True):
     st.bokeh_chart(div)
 
 
-def download_button(object_to_download, download_filename, button_text):
+def download_button(object_to_download, download_filename, button_text, target_format=None):
     """
     Generates a link to download the given object_to_download.
     From: https://discuss.streamlit.io/t/a-download-button-with-custom-css/4220
@@ -95,7 +99,23 @@ def download_button(object_to_download, download_filename, button_text):
         pass
 
     elif isinstance(object_to_download, pd.DataFrame):
-        object_to_download = object_to_download.to_csv(index=False)
+        # Option A: desired output format is csv
+        if target_format == 'csv' or target_format == 'txt':
+            object_to_download = object_to_download.to_csv(index=False)
+        # Option B: desired output format is xlsx
+        # trying with BytesIO for now
+        elif target_format == "xlsx":
+            output = BytesIO()
+            #TODO modify the method to add formatting (e.g: data filter, pane freezing)
+            writer = pd.ExcelWriter(output) 
+            object_to_download.to_excel(writer) #plus any **kwargs
+            writer.save()
+            object_to_download = output.getvalue() # converts from _io.BytesIO to bytes
+            #print("---------output type: ", type(object_to_download))
+        else:
+            #TODO ERR HANDLING - UNRECOGNIZED FORMAT"
+            pass
+
     # Try JSON encode for everything else
     else:
         object_to_download = json.dumps(object_to_download)
