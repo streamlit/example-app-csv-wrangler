@@ -34,7 +34,7 @@ st.image(
     width=100,
 )
 
-st.title("CSV Wrangler")
+st.title("CSV Wrangler Alice test")
 
 # st.caption(
 #     "PRD : TBC | Streamlit Ag-Grid from Pablo Fonseca: https://pypi.org/project/streamlit-aggrid/"
@@ -66,9 +66,10 @@ c29, c30, c31 = st.columns([1, 6, 1])
 with c30:
 
     uploaded_file = st.file_uploader(
-        "",
+        label=" ",
+        label_visibility='collapsed',
         key="1",
-        help="To activate 'wide mode', go to the hamburger menu > Settings > turn on 'wide mode'",
+        help="To activate 'wide mode', go to the hamburger menu > Settings > turn on 'wide mode'",    
     )
 
     if uploaded_file is not None:
@@ -119,7 +120,7 @@ st.table(df)
 
 st.text("")
 
-c29, c30, c31 = st.columns([1, 1, 2])
+c29, c30, c31, c32 = st.columns([1, 1, 1, 1])
 
 with c29:
 
@@ -127,11 +128,21 @@ with c29:
         df,
         "File.csv",
         "Download to CSV",
+        target_format="csv"
     )
 
 with c30:
-    CSVButton = download_button(
+    XLSXButton = download_button(
         df,
-        "File.csv",
+        "File.xlsx",
+        "Download to XLSX",
+        target_format="xlsx"
+    )
+
+with c31:
+    TXTButton = download_button(
+        df,
+        "File.txt",
         "Download to TXT",
+        target_format="txt"
     )
