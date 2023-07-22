@@ -1,137 +1,96 @@
+import os
+import openai
 import streamlit as st
-import pandas as pd
+from PyPDF2 import PdfReader
 
-###################################
-from st_aggrid import AgGrid
-from st_aggrid.grid_options_builder import GridOptionsBuilder
-from st_aggrid.shared import JsCode
+def pdf_to_text(file):
+    pdf_reader = PdfReader(file)
+    mytext = ""
+    for pageNum in range(len(pdf_reader.pages)):
+        page = pdf_reader.pages[pageNum]
+        mytext += page.extract_text()
+    return mytext
 
-###################################
+def ask_gpt(question, context, context_length=2048):
+    context = context[-context_length:]  # Truncate the context to the last context_length characters
+    prompt = f"{context}\nQuestion: {question}\nAnswer:"
+    response = openai.Completion.create(
+        engine="text-davinci-002", # Use GPT-3.5 Turbo
+        prompt=prompt,
+        max_tokens=150,
+        n=1,
+        stop=None,
+        temperature=0.8,
+    )
+    return response.choices[0].text.strip()
 
-from functionforDownloadButtons import download_button
-
-###################################
-
-
-def _max_width_():
-    max_width_str = f"max-width: 1800px;"
-    st.markdown(
-        f"""
+st.markdown(
+    """
     <style>
-    .reportview-container .main .block-container{{
-        {max_width_str}
-    }}
-    </style>    
+    .reportview-container {
+        background: #00518F;
+    }
+    h1, h2, h3, h4 {
+        color: #C4261D;
+    }
+    .sidebar .sidebar-content {
+        background-image: linear-gradient(#00518F,#00518F);
+        color: white;
+    }
+    .Widget>label {
+        color: white;
+        font-size: 18px !important;
+    }
+    [class^="st-b"]  {
+        color: white;
+    }
+    .st-bb {
+        background-color: transparent;
+    }
+    .stTextInput input {
+        color: black;
+    }
+    .st-ij {
+        color: white;
+    }
+    </style>
     """,
-        unsafe_allow_html=True,
-    )
-
-st.set_page_config(page_icon="✂️", page_title="CSV Wrangler")
-
-# st.image("https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/240/apple/285/balloon_1f388.png", width=100)
-st.image(
-    "https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/240/apple/285/scissors_2702-fe0f.png",
-    width=100,
+    unsafe_allow_html=True
 )
 
-st.title("CSV Wrangler")
+st.title("Hello, welcome to our CC Club Innovate Chatbot!")
 
-# st.caption(
-#     "PRD : TBC | Streamlit Ag-Grid from Pablo Fonseca: https://pypi.org/project/streamlit-aggrid/"
-# )
+user_name = st.text_input("What's your name?")
 
+if user_name:
+    st.markdown(f"### Nice to meet you, {user_name}! Let's get started. Please upload your documents.")
 
-# ModelType = st.radio(
-#     "Choose your model",
-#     ["Flair", "DistilBERT (Default)"],
-#     help="At present, you can choose between 2 models (Flair or DistilBERT) to embed your text. More to come!",
-# )
+uploaded_files = st.file_uploader("Choose PDF files", type="pdf", accept_multiple_files=True)
+conversation_history = ""
 
-# with st.expander("ToDo's", expanded=False):
-#     st.markdown(
-#         """
-# -   Add pandas.json_normalize() - https://streamlit.slack.com/archives/D02CQ5Z5GHG/p1633102204005500
-# -   **Remove 200 MB limit and test with larger CSVs**. Currently, the content is embedded in base64 format, so we may end up with a large HTML file for the browser to render
-# -   **Add an encoding selector** (to cater for a wider array of encoding types)
-# -   **Expand accepted file types** (currently only .csv can be imported. Could expand to .xlsx, .txt & more)
-# -   Add the ability to convert to pivot → filter → export wrangled output (Pablo is due to change AgGrid to allow export of pivoted/grouped data)
-# 	    """
-#     )
-# 
-#     st.text("")
+if uploaded_files:
+    texts = []
+    for uploaded_file in uploaded_files:
+        text = pdf_to_text(uploaded_file)
+        texts.append(text)
+    st.success(f"We have successfully uploaded {len(uploaded_files)} file(s)!")
 
+    with st.form("question_form"):
+        question = st.text_input("What would you like to know about the documents?")
+        submitted = st.form_submit_button("Submit")
+    if submitted:
+        answers = []
+        for text in texts:
+            conversation_history +=f"\nQuestion: {question}"
+            answer = ask_gpt(question, text + conversation_history)
+            answers.append(answer)
+            conversation_history += f"\nAnswer: {answer}"
+        st.subheader("Here's what we found:")
+        answer_table = {'Document': [f'Document {i+1}' for i in range(len(answers))],
+                        'Answer': answers}
+        st.table(answer_table)
+        if st.button("Ask another question"):
+            question = ""  # This will clear the question text input
+else:
+    st.warning("Please upload PDF files")
 
-c29, c30, c31 = st.columns([1, 6, 1])
-
-with c30:
-
-    uploaded_file = st.file_uploader(
-        "",
-        key="1",
-        help="To activate 'wide mode', go to the hamburger menu > Settings > turn on 'wide mode'",
-    )
-
-    if uploaded_file is not None:
-        file_container = st.expander("Check your uploaded .csv")
-        shows = pd.read_csv(uploaded_file)
-        uploaded_file.seek(0)
-        file_container.write(shows)
-
-    else:
-        st.info(
-            f"""
-                👆 Upload a .csv file first. Sample to try: [biostats.csv](https://people.sc.fsu.edu/~jburkardt/data/csv/biostats.csv)
-                """
-        )
-
-        st.stop()
-
-from st_aggrid import GridUpdateMode, DataReturnMode
-
-gb = GridOptionsBuilder.from_dataframe(shows)
-# enables pivoting on all columns, however i'd need to change ag grid to allow export of pivoted/grouped data, however it select/filters groups
-gb.configure_default_column(enablePivot=True, enableValue=True, enableRowGroup=True)
-gb.configure_selection(selection_mode="multiple", use_checkbox=True)
-gb.configure_side_bar()  # side_bar is clearly a typo :) should by sidebar
-gridOptions = gb.build()
-
-st.success(
-    f"""
-        💡 Tip! Hold the shift key when selecting rows to select multiple rows at once!
-        """
-)
-
-response = AgGrid(
-    shows,
-    gridOptions=gridOptions,
-    enable_enterprise_modules=True,
-    update_mode=GridUpdateMode.MODEL_CHANGED,
-    data_return_mode=DataReturnMode.FILTERED_AND_SORTED,
-    fit_columns_on_grid_load=False,
-)
-
-df = pd.DataFrame(response["selected_rows"])
-
-st.subheader("Filtered data will appear below 👇 ")
-st.text("")
-
-st.table(df)
-
-st.text("")
-
-c29, c30, c31 = st.columns([1, 1, 2])
-
-with c29:
-
-    CSVButton = download_button(
-        df,
-        "File.csv",
-        "Download to CSV",
-    )
-
-with c30:
-    CSVButton = download_button(
-        df,
-        "File.csv",
-        "Download to TXT",
-    )
